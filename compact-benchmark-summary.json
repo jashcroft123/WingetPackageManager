@@ -1,0 +1,48 @@
+﻿{
+    "MeasuredAt":  "2026-10-13T18:20:48.9883732+01:00",
+    "OS":  "Microsoft Windows NT 10.0.26200.0",
+    "CPU":  "Intel(R) Core(TM) i5-8600K CPU @ 3.60GHz",
+    "LogicalProcessors":  6,
+    "Method":  "Warm filesystem cache; hidden 1100x760 logical client windows at system DPI; same 98-row installed-package fixture; process start to native window creation, fixture parsing/model population and forced offscreen render; 750ms settling then 2s idle CPU sample; no WinGet/network during measurement; alternating order; one excluded warmup each",
+    "Results":  [
+                    {
+                        "App":  "Classic",
+                        "Trials":  10,
+                        "LaunchMedianMs":  86.901,
+                        "LaunchMinMs":  84.529,
+                        "LaunchMaxMs":  122.929,
+                        "PrivateMedianMiB":  2.0140000000000002,
+                        "WorkingSetMedianMiB":  11.084,
+                        "IdleCpuMedianPercent":  0,
+                        "IdleCpuMeanPercent":  0,
+                        "IdleCpuMaxPercent":  0,
+                        "ExeBytes":  492544
+                    },
+                    {
+                        "App":  "Slint",
+                        "Trials":  10,
+                        "LaunchMedianMs":  157.4665,
+                        "LaunchMinMs":  112.256,
+                        "LaunchMaxMs":  230.7,
+                        "PrivateMedianMiB":  9.1209999999999987,
+                        "WorkingSetMedianMiB":  26.488,
+                        "IdleCpuMedianPercent":  0,
+                        "IdleCpuMeanPercent":  0.15616,
+                        "IdleCpuMaxPercent":  0.7809,
+                        "ExeBytes":  13955072
+                    },
+                    {
+                        "App":  "Compact",
+                        "Trials":  10,
+                        "LaunchMedianMs":  79.4765,
+                        "LaunchMinMs":  77.181,
+                        "LaunchMaxMs":  89.195,
+                        "PrivateMedianMiB":  2.012,
+                        "WorkingSetMedianMiB":  10.855,
+                        "IdleCpuMedianPercent":  0,
+                        "IdleCpuMeanPercent":  0.15614,
+                        "IdleCpuMaxPercent":  0.7811,
+                        "ExeBytes":  458752
+                    }
+                ]
+}

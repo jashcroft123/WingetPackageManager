@@ -1,0 +1,299 @@
+// Compile with SLINT_STYLE=fluent (or CMake -DSLINT_STYLE=fluent).
+import { LineEdit, ListView, TextEdit, Palette, AboutSlint } from "std-widgets.slint";
+
+export struct PackageRow {
+    name: string,
+    id: string,
+    version: string,
+    available: string,
+    source: string,
+    selected: bool,
+}
+
+component Action inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    in property <bool> primary: false;
+    in property <bool> active: false;
+    in property <bool> dark;
+    callback invoked();
+    height: 38px;
+    min-width: 82px;
+    border-radius: 8px;
+    border-width: focus.has-focus ? 2px : 1px;
+    border-color: focus.has-focus ? #4389ef : root.primary || root.active ? #0000 : root.dark ? #40434b : #dfe3eb;
+    background: !root.enabled ? (root.dark ? #272a31 : #edf0f5) : root.primary ? (touch.pressed ? #174daa : touch.has-hover ? #286bd8 : #225fc9) : root.active ? (root.dark ? #263c5e : #e4edff) : touch.has-hover ? (root.dark ? #353943 : #edf2fa) : (root.dark ? #292d35 : #ffffff);
+    forward-focus: focus;
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-enabled: root.enabled;
+    accessible-action-default => { if root.enabled { root.invoked(); } }
+    Text {
+        x: 12px; width: parent.width - 24px; height: parent.height;
+        text: root.text;
+        font-size: 13px; font-weight: root.primary || root.active ? 600 : 400;
+        color: !root.enabled ? (root.dark ? #858b98 : #7c8597) : root.primary ? #ffffff : root.dark ? #e8edf6 : #263247;
+        horizontal-alignment: center; vertical-alignment: center; overflow: elide;
+    }
+    focus := FocusScope {
+        enabled: root.enabled;
+        key-pressed(event) => {
+            if event.text == Key.Return || event.text == Key.Space {
+                root.invoked();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { focus.focus(); root.invoked(); }
+    }
+}
+
+component Cell inherits Text {
+    in property <bool> dark;
+    color: root.dark ? #dce2ed : #344158;
+    font-size: 13px;
+    overflow: elide;
+    vertical-alignment: center;
+}
+
+export component AppWindow inherits Window {
+    title: "Winget Swift Modern";
+    preferred-width: 1100px;
+    preferred-height: 760px;
+    min-width: 900px;
+    min-height: 600px;
+    default-font-family: "Segoe UI";
+    default-font-size: 13px;
+    in property <bool> dark: false;
+    in property <bool> busy: false;
+    in property <int> current-page: 0;
+    in property <[PackageRow]> rows;
+    in property <int> selected-count: 0;
+    in property <int> total-count: 0;
+    in property <string> status-text: "Ready";
+    in property <string> activity-text;
+    in-out property <string> query;
+    in-out property <bool> activity-open: false;
+    private property <bool> about-open: false;
+    callback switch-page(int);
+    callback search-request(string);
+    callback filter-request(string);
+    callback refresh-request();
+    callback action-request();
+    callback export-request();
+    callback import-request();
+    callback row-click(int, bool, bool);
+    callback select-all();
+    callback clear-selection();
+
+    private property <color> ink: root.dark ? #eef2fa : #1d293e;
+    private property <color> muted: root.dark ? #a0aabb : #67758b;
+    private property <color> surface: root.dark ? #21252d : #ffffff;
+    private property <color> edge: root.dark ? #363c47 : #e2e7ef;
+    background: root.dark ? #191d25 : #f5f7fb;
+    init => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
+    changed dark => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
+    changed query => { if root.current-page != 0 { root.filter-request(root.query); } }
+
+    HorizontalLayout {
+        spacing: 0px;
+        Rectangle {
+            width: 204px;
+            background: root.dark ? #20242c : #edf1f8;
+            Rectangle { x: parent.width - 1px; width: 1px; height: parent.height; background: root.edge; }
+            VerticalLayout {
+                padding: 18px; spacing: 10px;
+                HorizontalLayout {
+                    height: 58px; spacing: 10px;
+                    Rectangle {
+                        width: 36px; height: 36px; border-radius: 10px; background: #225fc9;
+                        Text { text: "W"; font-size: 21px; font-weight: 700; color: white; horizontal-alignment: center; vertical-alignment: center; }
+                    }
+                    VerticalLayout {
+                        spacing: 2px;
+                        Text { text: "Winget Swift"; font-size: 16px; font-weight: 700; color: root.ink; }
+                        Text { text: "PACKAGE MANAGER"; font-size: 9px; color: root.muted; letter-spacing: 1px; }
+                    }
+                }
+                Text { height: 28px; text: "WORKSPACE"; font-size: 10px; font-weight: 600; color: root.muted; }
+                for page[index] in ["Discover", "Installed", "Updates"] : Action {
+                    height: 44px; dark: root.dark; text: page;
+                    active: root.current-page == index; enabled: !root.busy;
+                    invoked => { root.switch-page(index); }
+                }
+                Rectangle { vertical-stretch: 1; }
+                Rectangle { height: 1px; background: root.edge; }
+                Text { height: 28px; text: "PACKAGE COLLECTIONS"; font-size: 10px; font-weight: 600; color: root.muted; }
+                Action { dark: root.dark; text: "Import packages"; enabled: !root.busy; invoked => { root.import-request(); } }
+                Action { dark: root.dark; text: "Export packages"; enabled: !root.busy; invoked => { root.export-request(); } }
+                Action { dark: root.dark; text: "About"; invoked => { root.about-open = true; } }
+                Text { height: 42px; text: "Powered by Windows Package Manager"; wrap: word-wrap; font-size: 11px; color: root.muted; }
+            }
+        }
+        VerticalLayout {
+            padding: 24px; spacing: 12px;
+            HorizontalLayout {
+                height: 54px;
+                VerticalLayout {
+                    spacing: 5px;
+                    Text { text: root.current-page == 0 ? "Discover packages" : root.current-page == 1 ? "Installed packages" : "Available updates"; font-size: 27px; font-weight: 700; color: root.ink; }
+                    Text { text: root.current-page == 0 ? "Find your next essential app." : root.current-page == 1 ? "Everything installed, in one place." : "Keep your apps up to date."; color: root.muted; font-size: 13px; }
+                }
+                Action { width: 96px; dark: root.dark; text: "Refresh"; enabled: !root.busy; invoked => { root.refresh-request(); } }
+            }
+            HorizontalLayout {
+                height: 44px; spacing: 10px;
+                Rectangle {
+                    border-radius: 10px; background: root.surface; border-width: 1px; border-color: root.edge;
+                    HorizontalLayout {
+                        padding: 4px; spacing: 8px;
+                        LineEdit {
+                            text <=> root.query;
+                            font-family: "Segoe UI";
+                            placeholder-text: "Search by package name or ID";
+                            enabled: !root.busy;
+                            accessible-label: "Search packages";
+                            accepted(value) => { root.search-request(value); }
+                        }
+                    }
+                }
+                Action { width: 86px; height: 44px; dark: root.dark; text: "Search"; primary: true; enabled: !root.busy; invoked => { root.search-request(root.query); } }
+            }
+            HorizontalLayout {
+                height: 38px; spacing: 8px;
+                Text { text: root.total-count + " packages  ·  " + root.selected-count + " selected"; color: root.muted; vertical-alignment: center; horizontal-stretch: 1; }
+                Action { width: 88px; dark: root.dark; text: "Select all"; enabled: !root.busy && root.rows.length > 0; invoked => { root.select-all(); } }
+                Action { width: 82px; dark: root.dark; text: "Clear"; enabled: !root.busy && root.selected-count > 0; invoked => { root.clear-selection(); } }
+                Action {
+                    width: 142px; dark: root.dark; primary: true;
+                    text: root.current-page == 0 ? "Install selected" : root.current-page == 1 ? "Uninstall selected" : "Update selected";
+                    enabled: !root.busy && root.selected-count > 0;
+                    invoked => { root.action-request(); }
+                }
+            }
+            table := Rectangle {
+                vertical-stretch: 1;
+                min-width: 0px;
+                min-height: 130px;
+                background: root.surface; border-radius: 12px; border-width: 1px; border-color: root.edge;
+                clip: true;
+                // Header and rows share proportional columns, including scrollbar gutter.
+                private property <length> columns-width: self.width - 20px;
+                ListView {
+                    x: 1px; y: 43px; width: parent.width - 2px; height: parent.height - 44px;
+                    accessible-label: "Packages";
+                    accessible-item-count: root.rows.length;
+                    for package[index] in root.rows : Rectangle {
+                        height: 54px; width: parent.width;
+                        background: package.selected ? (root.dark ? #253b5d : #e9f0ff) : row-touch.has-hover ? (root.dark ? #2b303b : #f7f9fd) : root.surface;
+                        accessible-role: list-item;
+                        accessible-label: package.name + ", " + package.id + ", version " + package.version + ", available " + package.available + ", source " + package.source;
+                        accessible-item-selectable: true;
+                        accessible-item-selected: package.selected;
+                        accessible-item-index: index;
+                        accessible-enabled: !root.busy;
+                        forward-focus: row-focus;
+                        accessible-action-default => { if !root.busy { root.row-click(index, false, false); } }
+                        Rectangle { y: parent.height - 1px; height: 1px; width: parent.width; background: root.edge; }
+                        if package.selected : Rectangle { width: 3px; height: parent.height - 1px; background: #4389ef; }
+                        HorizontalLayout {
+                            padding-left: 13px; padding-right: 4px; spacing: 12px;
+                            Rectangle {
+                                width: 22px;
+                                Rectangle {
+                                    x: 2px; y: (parent.height - 17px) / 2; width: 17px; height: 17px;
+                                    border-radius: 4px; border-width: 1px;
+                                    border-color: package.selected ? #4389ef : root.dark ? #798395 : #9ba7b9;
+                                    background: package.selected ? #225fc9 : #0000;
+                                    Text { text: package.selected ? "✓" : ""; color: white; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+                                }
+                            }
+                            Cell { horizontal-stretch: 1; dark: root.dark; text: package.name; font-weight: 600; }
+                            Cell { width: 180px; dark: root.dark; text: package.id; color: root.muted; font-size: 12px; }
+                            Cell { width: 96px; dark: root.dark; text: package.version; }
+                            Cell { width: 96px; dark: root.dark; text: package.available; color: root.dark ? #8db6ff : #225fc9; }
+                            Cell { width: 64px; dark: root.dark; text: package.source; font-size: 11px; color: root.muted; }
+                        }
+                        row-focus := FocusScope {
+                            enabled: !root.busy;
+                            key-pressed(event) => {
+                                if event.text == Key.Space || event.text == Key.Return {
+                                    root.row-click(index, event.modifiers.control, event.modifiers.shift);
+                                    return accept;
+                                }
+                                return reject;
+                            }
+                        }
+                        if row-focus.has-focus : Rectangle {
+                            width: parent.width; height: parent.height;
+                            border-width: 2px; border-color: #4389ef; background: #0000;
+                        }
+                        row-touch := TouchArea {
+                            enabled: !root.busy;
+                            mouse-cursor: pointer;
+                            pointer-event(event) => {
+                                if event.button == PointerEventButton.left && event.kind == PointerEventKind.up {
+                                    row-focus.focus();
+                                    root.row-click(index, event.modifiers.control, event.modifiers.shift);
+                                }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    x: 0px; y: 0px; width: parent.width; height: 42px; background: root.dark ? #282d37 : #f0f3f9;
+                    Cell { x: 14px; width: 22px; height: parent.height; dark: root.dark; text: "✓"; accessible-label: "Selection"; }
+                    Cell { x: 48px; width: parent.width - 544px; height: parent.height; dark: root.dark; text: "PACKAGE"; font-size: 10px; font-weight: 600; }
+                    Cell { x: parent.width - 476px; width: 180px; height: parent.height; dark: root.dark; text: "PACKAGE ID"; font-size: 10px; font-weight: 600; }
+                    Cell { x: parent.width - 284px; width: 96px; height: parent.height; dark: root.dark; text: "VERSION"; font-size: 10px; font-weight: 600; }
+                    Cell { x: parent.width - 176px; width: 96px; height: parent.height; dark: root.dark; text: "AVAILABLE"; font-size: 10px; font-weight: 600; }
+                    Cell { x: parent.width - 68px; width: 64px; height: parent.height; dark: root.dark; text: "SOURCE"; font-size: 10px; font-weight: 600; }
+                }
+                if root.rows.length == 0 : VerticalLayout {
+                    x: 24px; y: 62px; width: parent.width - 48px; height: parent.height - 80px;
+                    spacing: 8px;
+                    Rectangle { vertical-stretch: 1; }
+                    Text { text: root.busy ? "Loading packages…" : "No packages to show"; font-size: 18px; font-weight: 600; color: root.ink; horizontal-alignment: center; }
+                    Text { text: root.busy ? "Windows Package Manager is working." : "Try a search or refresh this view."; color: root.muted; horizontal-alignment: center; }
+                    Rectangle { vertical-stretch: 1; }
+                }
+            }
+            Rectangle {
+                height: root.activity-open ? 120px : 40px;
+                background: root.surface; border-radius: 10px; border-width: 1px; border-color: root.edge;
+                VerticalLayout {
+                    padding: 6px; spacing: 6px;
+                    HorizontalLayout {
+                        height: 28px; spacing: 10px;
+                        Text { text: root.busy ? "●  Working" : "●  " + root.status-text; color: root.busy ? (root.dark ? #8db6ff : #225fc9) : root.muted; vertical-alignment: center; overflow: elide; horizontal-stretch: 1; accessible-label: "Status: " + root.status-text; }
+                        Action { width: 120px; height: 28px; dark: root.dark; text: root.activity-open ? "Hide activity  −" : "Show activity  +"; invoked => { root.activity-open = !root.activity-open; } }
+                    }
+                    if root.activity-open : TextEdit {
+                        text: root.activity-text; read-only: true;
+                        font-family: "Segoe UI"; font-size: 12px;
+                        accessible-label: "Package activity log";
+                    }
+                }
+            }
+        }
+    }
+    if root.about-open : Rectangle {
+        width: root.width; height: root.height; background: #0008;
+        TouchArea { clicked => { root.about-open = false; } }
+        Rectangle {
+            x: (root.width - 400px) / 2; y: (root.height - 250px) / 2;
+            width: 400px; height: 250px; background: root.surface; border-radius: 12px;
+            VerticalLayout {
+                padding: 22px; spacing: 12px;
+                Text { text: "Winget Swift Modern"; color: root.ink; font-size: 21px; font-weight: 600; }
+                Text { text: "Native C++ · software-rendered UI"; color: root.muted; }
+                AboutSlint { }
+                Action { dark: root.dark; text: "Close"; invoked => { root.about-open = false; } }
+            }
+        }
+    }
+}

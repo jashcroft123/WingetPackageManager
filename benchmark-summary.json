@@ -1,0 +1,35 @@
+﻿{
+    "MeasuredAt":  "2026-10-13T18:04:22.6679993+01:00",
+    "OS":  "Microsoft Windows NT 10.0.26200.0",
+    "CPU":  "Intel(R) Core(TM) i5-8600K CPU @ 3.60GHz",
+    "LogicalProcessors":  6,
+    "Method":  "Warm filesystem cache; hidden 1100x760 logical client windows at system DPI; same 98-row installed-package fixture; process start to native window creation, fixture parsing/model population and forced offscreen render; 750ms settling then 2s idle CPU sample; no WinGet/network during measurement; alternating order; one excluded warmup each",
+    "Results":  [
+                    {
+                        "App":  "Classic",
+                        "Trials":  10,
+                        "LaunchMedianMs":  88.181999999999988,
+                        "LaunchMinMs":  84.295,
+                        "LaunchMaxMs":  97.615,
+                        "PrivateMedianMiB":  2.002,
+                        "WorkingSetMedianMiB":  11.078,
+                        "IdleCpuMedianPercent":  0,
+                        "ExeBytes":  492544,
+                        "IdleCpuMeanPercent":  0,
+                        "IdleCpuMaxPercent":  0
+                    },
+                    {
+                        "App":  "Slint",
+                        "Trials":  10,
+                        "LaunchMedianMs":  178.0565,
+                        "LaunchMinMs":  131.109,
+                        "LaunchMaxMs":  214.503,
+                        "PrivateMedianMiB":  9.1230000000000011,
+                        "WorkingSetMedianMiB":  26.496,
+                        "IdleCpuMedianPercent":  0,
+                        "ExeBytes":  13955072,
+                        "IdleCpuMeanPercent":  0.388,
+                        "IdleCpuMaxPercent":  2.3276
+                    }
+                ]
+}
