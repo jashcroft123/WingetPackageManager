@@ -8,18 +8,21 @@ The source review found an executable lookup weakness: searching for `winget.exe
 
 Regression coverage puts a fake `winget.exe` in both the current directory and PATH. The genuine signed App Installer executable is selected and the fake is rejected. Parser/cache/batch tests, native UI tests, and read-only live remote/installed/update/export checks pass. Actual package mutations were not performed.
 
-Both binaries below passed local non-remediating Microsoft Defender custom scans with exit code 0 and no threats found. Real-time protection remained enabled. Security intelligence: `1.461.20.0`; engine: `1.1.26090.9`. The earlier binary was scanned twice. The reported alert was not reproduced on the build host.
+The earlier and initial hardened binaries passed local non-remediating Microsoft Defender custom scans with exit code 0 and no threats found. Real-time protection remained enabled. Security intelligence: `1.461.20.0`; engine: `1.1.26090.9`. The earlier binary was scanned twice. The reported alert was not reproduced on the build host.
 
 | Binary | Bytes | SHA-256 |
 |---|---:|---|
 | Earlier published EXE, commit `a61d3bb` | 182,784 | `3023E8397551A1242034FDDEAC4C700F6943675A468FD8C28D70AE81BDC30D61` |
-| Hardened EXE | 185,344 | `9B8CC23CBB8622B0D2867643BBAB225329DF5829CA48906B418508301B5F194B` |
+| Initial hardened EXE, commit `3e00cf9` | 185,344 | `9B8CC23CBB8622B0D2867643BBAB225329DF5829CA48906B418508301B5F194B` |
+| Current EXE with scrollbar drag fix | 185,344 | `71D00B8D9A191A90E547DBE89B808926260CBD9FBCAE7588370E827798004FBC` |
 
-Both EXEs are unsigned. Compiler/linker and the resolved WinGet executable have valid Microsoft signatures. The compact build uses MSVC with a static CRT and Windows system DLLs; it uses no executable packer or obfuscator. This hardening change is not evidence that the original Trojan classification has been corrected.
+The current drag-fix EXE also passed a non-remediating Defender scan with no threats and exit code 0, using intelligence `1.461.27.0` and engine `1.1.26090.9`, with real-time protection enabled. This does not resolve the user's reported classification.
+
+All three EXEs are unsigned. Compiler/linker and the resolved WinGet executable have valid Microsoft signatures. The compact build uses MSVC with a static CRT and Windows system DLLs; it uses no executable packer or obfuscator. This hardening change is not evidence that the original Trojan classification has been corrected.
 
 ## Prepared Microsoft review
 
-The [Microsoft submission portal](https://www.microsoft.com/en-us/wdsi/filesubmission) requires account sign-in for the Software developer route. No sample has been uploaded and no report submitted. Local review materials retain both binaries separately so the earlier sample is not lost during replacement.
+The [Microsoft submission portal](https://www.microsoft.com/en-us/wdsi/filesubmission) requires account sign-in for the Software developer route. No sample has been uploaded and no report submitted. Local review materials retain all three binaries separately so the earlier sample is not lost during replacement.
 
 Suggested additional information (submit each sample separately):
 

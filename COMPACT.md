@@ -35,6 +35,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\benchmark.ps1 -Trials 10 -
 
 ## Build and validation
 
+Scrollbar thumb dragging now skips unchanged row positions and defers painting until each native scroll operation finishes. Redraw is restored before returning; the message loop combines pending paints. The table retains buffered rendering, and dragging no longer requests an immediate full table/header redraw for each mouse movement.
+
+A visible diagnostic test on the same machine dispatches 601 thumb movements down and back up, with rendering opportunities every 12 moves. The previous build took 14,128 ms and painted the table 781 times; the updated build took 1,918 ms and painted 50 times. The maximum mouse-move handler time fell from 79.9 ms to 7.9 ms. These are single synthetic dispatch passes, not measurements of desktop frame rate or real mouse input latency; see `scroll-drag-results.csv`. Regression checks verify deferred paints, preserved capture/redraw, final position, unchanged-row invalidation, endpoints, cancellation, wheel scrolling, filtering and high contrast. Independent source review found no actionable defects. Release size remains 185,344 bytes.
+
 `build.ps1` now builds compact as the default and copies it to `dist/WingetSwift.exe`. `build-compact.ps1` writes `dist/compact/WingetSwift.exe`. `build-classic.ps1` retains the previous UI as `dist/WingetSwiftClassic.exe`; `build-modern.ps1` retains the Slint trial.
 
 Parser, quoting, cache and batch failure/timeout regressions pass. Native multi-selection, select-all/clear action state, filtering, activity expansion, light/dark rendering, high-contrast priority, live theme notification and GDI resource cleanup tests pass. Both light and dark screenshots were visually checked. Read-only live checks pass for remote, installed, updatable and empty lists, and a temporary migration export. Real package installation, update, removal and import were not executed.
