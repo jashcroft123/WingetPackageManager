@@ -8,6 +8,11 @@
 #include <shlobj.h>
 #include <dwmapi.h>
 #include <uxtheme.h>
+#include <appmodel.h>
+#include <wintrust.h>
+#include <softpub.h>
+#pragma comment(lib,"wintrust.lib")
+#pragma comment(lib,"crypt32.lib")
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -50,7 +55,8 @@ std::vector<Package> parse(const std::string& raw) {
 }
 struct Result { DWORD code=0; std::string output; bool timeout=false; };
 bool listSuccess(const Result& r){return !r.timeout&&(r.code==0||r.code==0x8a150014);}
-std::wstring wingetPath() { wchar_t buf[32768]; DWORD n=SearchPathW(nullptr,L"winget.exe",nullptr,32768,buf,nullptr); if(n && n<32768)return buf; throw std::runtime_error("WinGet is missing. Install Microsoft App Installer, then reopen Winget Swift."); }
+bool microsoftSigned(const std::wstring& path){WINTRUST_FILE_INFO file{sizeof(file)};file.pcwszFilePath=path.c_str();WINTRUST_DATA data{sizeof(data)};data.dwUIChoice=WTD_UI_NONE;data.fdwRevocationChecks=WTD_REVOKE_NONE;data.dwUnionChoice=WTD_CHOICE_FILE;data.pFile=&file;data.dwStateAction=WTD_STATEACTION_VERIFY;data.dwProvFlags=WTD_CACHE_ONLY_URL_RETRIEVAL;GUID policy=WINTRUST_ACTION_GENERIC_VERIFY_V2;bool trusted=WinVerifyTrust((HWND)INVALID_HANDLE_VALUE,&policy,&data)==ERROR_SUCCESS,identity=false;if(trusted){auto provider=WTHelperProvDataFromStateData(data.hWVTStateData);auto signer=provider?WTHelperGetProvSignerFromChain(provider,0,FALSE,0):nullptr;if(signer&&signer->csCertChain){wchar_t name[128];CertGetNameStringW(signer->pasCertChain[0].pCert,CERT_NAME_SIMPLE_DISPLAY_TYPE,0,nullptr,name,128);identity=wcscmp(name,L"Microsoft Corporation")==0;}}data.dwStateAction=WTD_STATEACTION_CLOSE;WinVerifyTrust((HWND)INVALID_HANDLE_VALUE,&policy,&data);return trusted&&identity;}
+std::wstring wingetPath(){static const std::wstring verified=[](){constexpr auto family=L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe";UINT32 count=0,length=0;if(GetPackagesByPackageFamily(family,&count,nullptr,&length,nullptr)!=ERROR_INSUFFICIENT_BUFFER||!count)throw std::runtime_error("Microsoft App Installer is missing. Install it from Microsoft, then reopen Winget Swift.");std::vector<PWSTR> names(count);std::vector<wchar_t> buffer(length);if(GetPackagesByPackageFamily(family,&count,names.data(),&length,buffer.data())!=ERROR_SUCCESS)throw std::runtime_error("Cannot locate Microsoft's registered App Installer package.");for(UINT32 i=0;i<count;++i){UINT32 size=0;if(GetPackagePathByFullName(names[i],&size,nullptr)!=ERROR_INSUFFICIENT_BUFFER)continue;std::vector<wchar_t> location(size);if(GetPackagePathByFullName(names[i],&size,location.data())!=ERROR_SUCCESS)continue;std::wstring path=std::wstring(location.data())+L"\\winget.exe";if(microsoftSigned(path))return path;}throw std::runtime_error("No Microsoft-signed WinGet executable found in App Installer. Repair App Installer, then reopen Winget Swift.");}();return verified;}
 Result run(const std::vector<std::wstring>& args,int seconds,const std::atomic_bool* cancel=nullptr) {
  auto exe=wingetPath();
  SECURITY_ATTRIBUTES sa{sizeof(sa),nullptr,TRUE}; HANDLE rd=nullptr,wr=nullptr;
