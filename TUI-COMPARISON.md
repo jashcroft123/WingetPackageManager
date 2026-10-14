@@ -35,4 +35,4 @@ Rebuilt 2026-10-14 from the integrated source with the default x86 build scripts
 | WingetSwift.exe | 101,888 | BEC8F093466299352496B76E04B435A2F14A5D1FB8C96862B4688151727D0EAB |
 | WingetSwiftTuiC.exe | 46,592 | 21297DACF63856980354AA45331CB1E8AA8B980DED7C9ADD63A5B604B98458A0 |
 
-C GUI final build and hash evidence: [NATIVE-C.md](NATIVE-C.md). Its diagnostic build is 53,248 bytes. The top-level C GUI received a non-remediating clean local Defender scan; runtime verification remains pending.
+C GUI final build and hash evidence: [NATIVE-C.md](NATIVE-C.md). Its diagnostic build is 53,760 bytes. The top-level C GUI received a non-remediating clean local Defender scan; runtime verification remains pending.
