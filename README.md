@@ -6,7 +6,7 @@ Run `dist/WingetSwift.exe`.
 
 [Download the portable EXE](dist/WingetSwift.exe?raw=true) or [portable ZIP](dist/WingetSwift-portable.zip?raw=true).
 
-The recommended build is the modern **compact native UI**, at **179,712 bytes (180 KB / 176 KiB)**. It recreates the sidebar, rounded controls, spacious rows and collapsible activity panel without Slint. Package-list and activity-log scrollbars use slim rounded thumbs matching the light/dark panel colors, with Windows handling scrolling and high-contrast appearance. Controls adapt to narrow windows and DPI changes to prevent overlapping buttons. See **COMPACT.md** for measurements. The earlier classic build is `dist/WingetSwiftClassic.exe`; the larger Slint trial remains at `dist/modern/WingetSwiftModern.exe`.
+The recommended build is the modern **compact native UI**, at **180,224 bytes (180 KB / 176 KiB)**. It recreates the sidebar, rounded controls, spacious rows and collapsible activity panel without Slint. Package-list and activity-log scrollbars use slim rounded thumbs matching the light/dark panel colors, with Windows handling scrolling and high-contrast appearance. Controls adapt to narrow windows and DPI changes to prevent overlapping buttons. See **COMPACT.md** for measurements. The earlier classic build is `dist/WingetSwiftClassic.exe`; the larger Slint trial remains at `dist/modern/WingetSwiftModern.exe`.
 
 The interface follows Windows' default **app** light/dark mode and updates when Windows theme settings change. Window backgrounds, text fields, package lists, column headers, buttons, and the title bar adapt. Windows high-contrast mode takes priority. Native dialogs and scrollbars retain the appearance supplied by Windows.
 
