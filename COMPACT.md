@@ -2,7 +2,7 @@
 
 The recommended build is now **Winget Swift Compact**: the modern layout recreated with native Win32 controls and GDI drawing. It has no Slint, browser engine, bundled fonts, or additional runtime DLLs.
 
-The current release EXE is **177,664 bytes** (177.7 decimal KB, 173.5 KiB), down from 467,456 bytes in the previous delivered build. Minimum size is the target. The default x86 build is the smallest measured variant; x64 is 229,376 bytes. Both use static CRT linkage and only Windows system DLLs. Existing features remain: remote search/install, cached installed and updatable lists, Ctrl/Shift multi-selection, sequential batch actions, and WinGet JSON export/import.
+The current release EXE is **179,200 bytes** (179.2 decimal KB, 175 KiB), down from 467,456 bytes in the previous delivered build. Minimum size is the target. The default x86 build is the smallest variant; x64 is also available. Both use static CRT linkage and only Windows system DLLs. Existing features remain: remote search/install, cached installed and updatable lists, Ctrl/Shift multi-selection, sequential batch actions, and WinGet JSON export/import.
 
 The UI includes a sidebar, rounded buttons/search field, spacious rows, selection counts, and a collapsible activity panel. It follows Windows light/dark app settings and system high-contrast colors. Controls retain native keyboard interaction; Ctrl+A selects all package rows.
 
@@ -56,3 +56,5 @@ Diagnostics use a synthetic 98-package fixture unless a local `benchmark-fixture
 Update feedback includes elapsed time, animated activity, and the current package's position in a batch. Animation stops on completion. Rounded surfaces use [Windows GDI+ antialiasing](https://learn.microsoft.com/en-us/windows/win32/api/_gdiplus/) without bundling a drawing runtime. Regression checks verify blended edge pixels and timer cleanup.
 
 Cache tests cover legacy files, Unicode paths, malformed/overflowing timestamps, maximum captured output, 128-entry pruning, and invalidation. Read-only live tests pass on x86 for remote search, installed/updatable lists, empty searches, and migration export. Real package installation/update/removal/import were not executed.
+
+Resize painting now batches child positions, avoids copying stale pixels, buffers the parent background, and skips layout while minimized. Columns update only when their available width changes and reserve scrollbar space. Checks cover 120 resize steps across the toolbar breakpoint, both activity states, column fit without horizontal scrolling, minimization, and the existing 48 size/DPI combinations. The launch measurements above predate this resize fix, which adds 1,536 bytes to the x86 EXE; launch time has not been re-measured.
