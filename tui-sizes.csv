@@ -1,0 +1,4 @@
+variant,branch,exe_bytes
+cpp_gui,main,101888
+cpp_tui,experiment/native-tui,96768
+c_tui,experiment/c-tui,46592

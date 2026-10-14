@@ -23,3 +23,6 @@ test-results.txt
 layout-debug.txt
 startup-ms.txt
 comparison.html
+
+!dist/WingetSwiftTuiC.exe
+!dist/WingetSwiftTuiC-portable.zip

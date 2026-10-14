@@ -1,3 +1,5 @@
+> **C TUI experiment branch.** Build with `build-tui-c.ps1`. See [console controls](TUI-C.md) and [three-variant measurements](TUI-COMPARISON.md). The native GUI remains on main. Unsigned experimental binaries are included in dist; security status remains unresolved.
+
 # Winget Swift
 
 A small native Windows GUI for Microsoft WinGet. The default build uses ordinary Windows buttons, edit controls, a virtual package table and native scrollbars. No custom drawing, GUI framework, browser engine, bundled fonts or extra runtime installer.
