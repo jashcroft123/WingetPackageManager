@@ -2,7 +2,7 @@
 
 The recommended build is now **Winget Swift Compact**: the modern layout recreated with native Win32 controls and GDI drawing. It has no Slint, browser engine, bundled fonts, or additional runtime DLLs.
 
-The current release EXE is **179,200 bytes** (179.2 decimal KB, 175 KiB), down from 467,456 bytes in the previous delivered build. Minimum size is the target. The default x86 build is the smallest variant; x64 is also available. Both use static CRT linkage and only Windows system DLLs. Existing features remain: remote search/install, cached installed and updatable lists, Ctrl/Shift multi-selection, sequential batch actions, and WinGet JSON export/import.
+The current release EXE is **179,712 bytes** (179.7 decimal KB, 175.5 KiB), down from 467,456 bytes in the previous delivered build. Minimum size is the target. The default x86 build is the smallest variant; x64 is also available. Both use static CRT linkage and only Windows system DLLs. Existing features remain: remote search/install, cached installed and updatable lists, Ctrl/Shift multi-selection, sequential batch actions, and WinGet JSON export/import.
 
 The UI includes a sidebar, rounded buttons/search field, spacious rows, selection counts, and a collapsible activity panel. It follows Windows light/dark app settings and system high-contrast colors. Controls retain native keyboard interaction; Ctrl+A selects all package rows.
 
@@ -57,4 +57,6 @@ Update feedback includes elapsed time, animated activity, and the current packag
 
 Cache tests cover legacy files, Unicode paths, malformed/overflowing timestamps, maximum captured output, 128-entry pruning, and invalidation. Read-only live tests pass on x86 for remote search, installed/updatable lists, empty searches, and migration export. Real package installation/update/removal/import were not executed.
 
-Resize painting now batches child positions, avoids copying stale pixels, buffers the parent background, and skips layout while minimized. Columns update only when their available width changes and reserve scrollbar space. Checks cover 120 resize steps across the toolbar breakpoint, both activity states, column fit without horizontal scrolling, minimization, and the existing 48 size/DPI combinations. The launch measurements above predate this resize fix, which adds 1,536 bytes to the x86 EXE; launch time has not been re-measured.
+Resize painting now batches child positions, avoids copying stale pixels, buffers the parent background, and skips layout while minimized. Columns update only when their available width changes and reserve scrollbar space. Checks cover 120 resize steps across the toolbar breakpoint, both activity states, column fit without horizontal scrolling, minimization, and the existing 48 size/DPI combinations. The launch measurements above predate this resize fix, which adds 2,048 bytes to the x86 EXE; launch time has not been re-measured.
+
+Button and header drawing are buffered, native button background erasure is suppressed, resize invalidation avoids an extra erase pass, and unchanged selection labels are not rewritten. UI regression checks and light/dark renders pass with stable GDI resource counts. The shipped EXE remains unsigned; signing requires a trusted certificate, and new signed files may still show reputation warnings.
