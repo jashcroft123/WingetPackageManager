@@ -57,8 +57,8 @@ std::vector<Package> parse(const std::string& raw) {
   if(!p.name.empty()&&!p.id.empty()&&validId&&!p.version.empty()&&p.version.find_first_of(L" \t")==p.version.npos)out.push_back(std::move(p));
  } return out;
 }
-struct Result { DWORD code=0; std::string output; bool timeout=false; };
-bool listSuccess(const Result& r){return !r.timeout&&(r.code==0||r.code==0x8a150014);}
+struct Result { DWORD code=0; std::string output; bool timeout=false,captureFailed=false; };
+bool listSuccess(const Result& r){return !r.timeout&&!r.captureFailed&&(r.code==0||r.code==0x8a150014);}
 bool microsoftSigned(const std::wstring& path){WINTRUST_FILE_INFO file{sizeof(file)};file.pcwszFilePath=path.c_str();WINTRUST_DATA data{sizeof(data)};data.dwUIChoice=WTD_UI_NONE;data.fdwRevocationChecks=WTD_REVOKE_NONE;data.dwUnionChoice=WTD_CHOICE_FILE;data.pFile=&file;data.dwStateAction=WTD_STATEACTION_VERIFY;data.dwProvFlags=WTD_CACHE_ONLY_URL_RETRIEVAL;GUID policy=WINTRUST_ACTION_GENERIC_VERIFY_V2;bool trusted=WinVerifyTrust((HWND)INVALID_HANDLE_VALUE,&policy,&data)==ERROR_SUCCESS,identity=false;if(trusted){auto provider=WTHelperProvDataFromStateData(data.hWVTStateData);auto signer=provider?WTHelperGetProvSignerFromChain(provider,0,FALSE,0):nullptr;if(signer&&signer->csCertChain){wchar_t name[128];CertGetNameStringW(signer->pasCertChain[0].pCert,CERT_NAME_SIMPLE_DISPLAY_TYPE,0,nullptr,name,128);identity=wcscmp(name,L"Microsoft Corporation")==0;}}data.dwStateAction=WTD_STATEACTION_CLOSE;WinVerifyTrust((HWND)INVALID_HANDLE_VALUE,&policy,&data);return trusted&&identity;}
 std::wstring wingetPath(){static const std::wstring verified=[](){constexpr auto family=L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe";UINT32 count=0,length=0;if(GetPackagesByPackageFamily(family,&count,nullptr,&length,nullptr)!=ERROR_INSUFFICIENT_BUFFER||!count)throw std::runtime_error("Microsoft App Installer is missing. Install it from Microsoft, then reopen Winget Swift.");std::vector<PWSTR> names(count);std::vector<wchar_t> buffer(length);if(GetPackagesByPackageFamily(family,&count,names.data(),&length,buffer.data())!=ERROR_SUCCESS)throw std::runtime_error("Cannot locate Microsoft's registered App Installer package.");for(UINT32 i=0;i<count;++i){UINT32 size=0;if(GetPackagePathByFullName(names[i],&size,nullptr)!=ERROR_INSUFFICIENT_BUFFER)continue;std::vector<wchar_t> location(size);if(GetPackagePathByFullName(names[i],&size,location.data())!=ERROR_SUCCESS)continue;std::wstring path=std::wstring(location.data())+L"\\winget.exe";if(microsoftSigned(path))return path;}throw std::runtime_error("No Microsoft-signed WinGet executable found in App Installer. Repair App Installer, then reopen Winget Swift.");}();return verified;}
 Result run(const std::vector<std::wstring>& args,int seconds,const std::atomic_bool* cancel=nullptr) {
@@ -70,15 +70,17 @@ Result run(const std::vector<std::wstring>& args,int seconds,const std::atomic_b
  STARTUPINFOW si{sizeof(si)}; si.dwFlags=STARTF_USESTDHANDLES; si.hStdOutput=wr; si.hStdError=wr; si.hStdInput=input; PROCESS_INFORMATION pi{};
  BOOL ok=CreateProcessW(exe.c_str(),cmd.data(),nullptr,nullptr,TRUE,CREATE_NO_WINDOW,nullptr,nullptr,&si,&pi); DWORD launchError=ok?0:GetLastError();CloseHandle(wr); CloseHandle(input);
  if(!ok){CloseHandle(rd);throw std::runtime_error("Could not start WinGet (Windows error "+number(launchError)+")");}
- Result result; auto deadline=steady_clock::now()+std::chrono::seconds(seconds); char buffer[8192];
- for(;;) {if(cancel&&cancel->load()){TerminateProcess(pi.hProcess,ERROR_CANCELLED);break;} if(steady_clock::now()>deadline){result.timeout=true;TerminateProcess(pi.hProcess,ERROR_TIMEOUT);break;} DWORD available=0,read=0; if(!PeekNamedPipe(rd,nullptr,0,nullptr,&available,nullptr))break;
-  if(available) { if(ReadFile(rd,buffer,std::min<DWORD>(available,sizeof(buffer)),&read,nullptr)) { if(result.output.size()<16*1024*1024)result.output.append(buffer,read); } continue; }
+ Result result;bool pipeClosed=false;auto deadline=steady_clock::now()+std::chrono::seconds(seconds);char buffer[8192];
+ auto captureError=[&](DWORD error){result.captureFailed=true;result.code=error;result.output+="\r\nCannot capture WinGet output; an installer may still run.\r\n";TerminateProcess(pi.hProcess,error);};
+ for(;;) {if(cancel&&cancel->load()){TerminateProcess(pi.hProcess,ERROR_CANCELLED);break;} if(steady_clock::now()>deadline){result.timeout=true;TerminateProcess(pi.hProcess,ERROR_TIMEOUT);break;} DWORD available=0,read=0;
+  if(!pipeClosed&&!PeekNamedPipe(rd,nullptr,0,nullptr,&available,nullptr)){DWORD error=GetLastError();if(error==ERROR_BROKEN_PIPE)pipeClosed=true;else{captureError(error);break;}}
+  if(!pipeClosed&&available) { if(ReadFile(rd,buffer,std::min<DWORD>(available,sizeof(buffer)),&read,nullptr)) { if(result.output.size()<16*1024*1024)result.output.append(buffer,read);if(!read)pipeClosed=true; }else{DWORD error=GetLastError();if(error==ERROR_BROKEN_PIPE)pipeClosed=true;else{captureError(error);break;}} continue; }
   if(WaitForSingleObject(pi.hProcess,20)==WAIT_OBJECT_0) { // Exit can race the previous pipe peek: drain once more before leaving.
-   while(PeekNamedPipe(rd,nullptr,0,nullptr,&available,nullptr)&&available) { if(!ReadFile(rd,buffer,std::min<DWORD>(available,sizeof(buffer)),&read,nullptr))break; if(result.output.size()<16*1024*1024)result.output.append(buffer,read); } break;
+   while(!pipeClosed&&PeekNamedPipe(rd,nullptr,0,nullptr,&available,nullptr)&&available) { if(!ReadFile(rd,buffer,std::min<DWORD>(available,sizeof(buffer)),&read,nullptr))break; if(result.output.size()<16*1024*1024)result.output.append(buffer,read); } break;
   }
   if(steady_clock::now()>deadline){result.timeout=true;TerminateProcess(pi.hProcess,ERROR_TIMEOUT);break;}
  }
- WaitForSingleObject(pi.hProcess,5000); GetExitCodeProcess(pi.hProcess,&result.code); CloseHandle(rd);CloseHandle(pi.hThread);CloseHandle(pi.hProcess); return result;
+ WaitForSingleObject(pi.hProcess,5000);if(!result.captureFailed)GetExitCodeProcess(pi.hProcess,&result.code);CloseHandle(rd);CloseHandle(pi.hThread);CloseHandle(pi.hProcess);return result;
 }
 std::wstring cacheDir;
 std::wstring cachePath(const std::wstring& key) {uint64_t h=14695981039346656037ull;for(auto c:utf8(key)){h^=(unsigned char)c;h*=1099511628211ull;}wchar_t hex[17];int at=16;hex[at]=0;do{hex[--at]=L"0123456789abcdef"[h&15];h>>=4;}while(h);return cacheDir+L"\\"+(hex+at)+L".cache";}
@@ -101,7 +103,7 @@ template<class Execute> Result runBatch(const std::vector<Command>& commands,con
   Result r;try{r=execute(args);}catch(const std::exception& e){r.code=ERROR_GEN_FAILURE;r.output=e.what();}
   total.output+=r.output+"\r\nExit: "+number(r.code)+"\r\n";
   if(r.code==0&&!r.timeout)++succeeded;else if(total.code==0)total.code=r.code?r.code:ERROR_TIMEOUT;
-  if(r.timeout){total.timeout=true;break;}
+  if(r.timeout||r.captureFailed){total.timeout=r.timeout;total.captureFailed=r.captureFailed;break;}
  }
  total.output+="\r\nSummary: "+number(succeeded)+" succeeded, "+number(attempted-succeeded)+" failed, "+number(commands.size()-attempted)+" not attempted.\r\n";
  return total;
