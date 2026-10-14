@@ -1,3 +1,12 @@
+The smallest measured GUI and TUI are included at the repository root:
+
+| App | Language | EXE | Build |
+|---|---|---|---|
+| Native GUI, 101,888 bytes | C++ | `WingetSwift.exe` | `powershell -File build.ps1` |
+| Native TUI, 46,592 bytes | C | `WingetSwiftTuiC.exe` | `powershell -File build-tui-c.ps1` |
+
+Both source implementations and build scripts are on main. See [console controls](TUI-C.md) and [size measurements](TUI-COMPARISON.md). These are unsigned experimental binaries; security status remains unresolved.
+
 # Winget Swift
 
 A small native Windows GUI for Microsoft WinGet. The default build uses ordinary Windows buttons, edit controls, a virtual package table and native scrollbars. No custom drawing, GUI framework, browser engine, bundled fonts or extra runtime installer.
