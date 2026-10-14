@@ -1,5 +1,7 @@
 # Compact native UI
 
+This document describes the previous styled frontend and its historical measurements. The default is now the smaller plain Win32 frontend; see [NATIVE.md](NATIVE.md).
+
 The recommended build is now **Winget Swift Compact**: the modern layout recreated with native Win32 controls and GDI drawing. It has no Slint, browser engine, bundled fonts, or additional runtime DLLs.
 
 The current release EXE is **185,344 bytes** (185.3 decimal KB, 181.0 KiB), down from 467,456 bytes in the previous delivered build. Minimum size is the target. The default x86 build is the smallest variant; x64 is also available. Both use static CRT linkage and only Windows system DLLs. Existing features remain: remote search/install, cached installed and updatable lists, Ctrl/Shift multi-selection, sequential batch actions, and WinGet JSON export/import.

@@ -1,76 +1,66 @@
 # Winget Swift
 
-A native C++ Windows GUI for WinGet. Single portable EXE, no .NET, Electron, WebView, or third-party runtime required. Windows 10/11 with Microsoft App Installer (`winget`) is required. The default is x86 for minimum size; an x64 build is also available.
+A small native Windows GUI for Microsoft WinGet. The default build uses ordinary Windows buttons, edit controls, a virtual package table and native scrollbars. No custom drawing, GUI framework, browser engine, bundled fonts or extra runtime installer.
 
-**Download links are removed pending malware analysis.** Windows has repeatedly blocked the delivered app; an earlier screenshot identified `Trojan:Win32/Sabsik.FL.A!ml`. Local clean scans have not resolved that report. Keep the flagged file quarantined and do not add an antivirus exclusion. [Investigation, sample hashes and prepared Microsoft report](DEFENDER-REVIEW.md).
+The x86 EXE is **101,888 bytes (101.9 KB / 99.5 KiB)**, down from 185,344 bytes in the styled build. See [size measurements and validation](NATIVE.md).
 
-Source and build instructions remain available. Previously committed binaries remain in this repository and its history; they are covered by this warning too. Building the source yourself does not establish that the resulting EXE is safe or will be accepted by Defender.
+**Security status remains unresolved.** Earlier downloads were repeatedly blocked; a screenshot identified `Trojan:Win32/Sabsik.FL.A!ml`. Windows Application Control also blocked a diagnostic build during this rewrite. Local Defender scans do not establish that those reports are false positives. The checked-in EXE is an unsigned experimental build, not a security-cleared release. Keep flagged files quarantined and do not add exclusions or disable protection. [Investigation and exact hashes](DEFENDER-REVIEW.md).
 
-The recommended build is the modern **compact native UI**, at **185,344 bytes (185 KB / 181 KiB)**. It recreates the sidebar, rounded controls, spacious rows and collapsible activity panel without Slint. Package-list and activity-log scrollbars use slim rounded thumbs matching the light/dark panel colors, with Windows handling scrolling and high-contrast appearance. Controls adapt to narrow windows and DPI changes to prevent overlapping buttons. See **COMPACT.md** for measurements. The earlier classic build is `dist/WingetSwiftClassic.exe`; the larger Slint trial remains at `dist/modern/WingetSwiftModern.exe`.
+## Features
 
-The interface follows Windows' default **app** light/dark mode and updates when Windows theme settings change. Window backgrounds, text fields, package lists, column headers, buttons, and the title bar adapt. Windows high-contrast mode takes priority. Native dialogs and scrollbars retain the appearance supplied by Windows.
+- **Remote:** search the community WinGet source by name or package ID, then install selected packages.
+- **Installed:** filter locally and remove selected packages.
+- **Updates:** list available upgrades and update selected packages.
+- **Refresh:** bypass cached results and request a fresh listing.
+- **Export setup:** write WinGet JSON with the identifiable installed packages and versions.
+- **Import setup:** install the latest available versions from that JSON on another machine.
 
-- **Discover**: type a name or ID, press Enter or Search, select a result, then Install selected. Searches use the community `winget` source and return up to 1,000 results; narrow the query when needed.
-- **Installed**: filter immediately by name or ID, select a package, then Remove selected.
-- **Updates**: view available upgrades and update selected packages.
-- **Refresh**: bypass the cache and request fresh results.
-- **Export setup**: saves a native WinGet JSON export, including installed versions.
-- **Import setup**: choose that JSON on another machine to install the latest available versions. Review the file before importing. The EXE and WinGet must be available on that machine.
+Ctrl-click selects separate rows; Shift-click selects a range. Ctrl+A or Select all selects every displayed row. Package changes require confirmation, use exact package IDs and run sequentially. Failures are logged; a timeout stops the remaining batch. Refreshing or changing filters clears selection to avoid stale targets.
 
-Export covers packages WinGet can identify in its sources. It does not copy application data, settings, licenses, or installers. WinGet reports skipped/unavailable packages in the output panel. The equivalent migration commands are documented by Microsoft: [export](https://learn.microsoft.com/en-us/windows/package-manager/winget/export) and [import](https://learn.microsoft.com/en-us/windows/package-manager/winget/import).
+Background WinGet work leaves navigation, filtering and selection available. The newest pending check replaces earlier requests, and obsolete read-only checks are canceled. Repeating a check already in progress reuses it; Refresh deliberately starts a fresh check. Results apply only to the matching view/query. Feedback identifies the operation, elapsed time and batch position; failures remain visible after the subsequent refresh.
 
-Package changes require a confirmation dialog. WinGet receives exact package IDs and source identifiers, never a shell command. Package/source agreements are accepted after confirmation. Installers may display UI or request elevation. The app itself runs without elevation.
+Windows owns control rendering, scrolling, keyboard behavior and system/high-contrast colors. The window follows per-monitor DPI. Table columns fit the available width. Styling and custom dark-mode drawing are intentionally absent.
 
-Use **Ctrl-click** to select separate packages or **Shift-click** to select a range in any package list. Install, update, and remove apply to every selected package after one confirmation. Packages run sequentially; failures are logged and remaining packages continue. A timeout stops the remaining batch. The output includes per-package results and a success/failure summary. Filtering or refreshing clears selections to prevent stale row targets.
+## Cache and portability
 
-## Performance and cache
+The window is created before any WinGet or network work. The table is virtual, so rows are not individual UI objects. Installed lists cache for 10 minutes, updates for 5 minutes and remote queries for 24 hours. Expired results display while refreshing. At most 128 cache files are retained, and package changes invalidate them.
 
-The UI opens before WinGet runs. A virtual list avoids creating an individual UI object for every package. All WinGet work happens on a background thread. The static C++ runtime is linked into the EXE.
+Default cache location: `%LOCALAPPDATA%\WingetSwift\cache`. `WingetSwift.exe --portable` keeps the cache beside the EXE instead; that directory must be writable. Delete the cache directory to reset it.
 
-Disk caches are reused across launches: installed packages for 10 minutes, updates for 5 minutes, and remote queries for 24 hours. Expired results display immediately while refreshing. A maximum of 128 cache files is retained. Package changes invalidate the caches; failed changes clear the visible list and leave the error available. Refresh explicitly bypasses caching. Cached results can be viewed without network access; fresh remote searches require network access.
+Requires Windows 10/11 and Microsoft's App Installer/WinGet. WinGet's [requirements](https://learn.microsoft.com/en-us/windows/package-manager/winget/) include Windows 10 version 1809 or later. The x86 build runs on both x86 and x64 Windows. All imported DLLs are Windows components, including its built-in Universal C Runtime. No Visual C++ redistributable is required: the C++ and compiler runtime components are statically linked using [Microsoft's Hybrid CRT configuration](https://learn.microsoft.com/en-us/windows-hardware/drivers/develop/using-the-microsoft-c-runtime-with-user-mode-drivers-and-apps).
 
-By default cache files live under `%LOCALAPPDATA%\WingetSwift\cache`. Run `WingetSwift.exe --portable` to keep them beside the EXE instead (the folder must be writable). Delete the cache folder to reset it.
+The app resolves WinGet only from the registered Microsoft App Installer package and verifies a trusted Microsoft Corporation signature. It ignores replacement executables in the current directory and PATH. Restart the app if an App Installer update removes the package directory it verified earlier.
 
-The recommended release is 181 KiB. Before the repaint fixes, release launch-to-responsive-window medians were 68 ms for x86 and 61 ms for x64 across ten warm runs. The historical matched fixture-render benchmark measured 79 ms for compact, 87 ms for classic, and 157 ms for Slint. These use different readiness endpoints and should not be directly compared. WinGet's network/source startup remains outside the app's control. Details and raw results are in COMPACT.md.
+Export covers packages WinGet can identify. It does not copy app data, settings, licenses or installers. Review JSON before importing. Missing packages and other warnings appear in the output. See Microsoft's [export](https://learn.microsoft.com/en-us/windows/package-manager/winget/export) and [import](https://learn.microsoft.com/en-us/windows/package-manager/winget/import) documentation.
 
 ## Build
 
-Install Visual Studio Build Tools with **Desktop development with C++** and a Windows SDK. From this directory:
+Install Visual Studio Build Tools with Desktop development with C++ and a Windows SDK, then run:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Output: `dist/WingetSwift.exe` and `dist/compact/WingetSwift.exe`. The EXE is unsigned. The compact build uses static CRT linkage plus size/link-time optimization. Test and benchmark code stays out of the shipped EXE. Use `build-compact.ps1 -Architecture amd64` for `dist/compact-x64/WingetSwift.exe`, or `build-classic.ps1` for the earlier UI.
+Output: `dist/WingetSwift.exe` and `dist/native/WingetSwift.exe`. The build uses x86, size optimization and link-time optimization. ASLR, DEP, stack-security checks and executable trust verification remain enabled. No packer or obfuscator is used. `build-native.ps1 -Architecture amd64` produces the larger x64 variant.
 
-To build the modern version, also install Rust 1.92+ and the Visual Studio CMake/Ninja tools, then run `powershell -NoProfile -ExecutionPolicy Bypass -File .\build-modern.ps1`. It downloads pinned Slint 1.18.0 and builds its static runtime on the first run, which takes several minutes. Output: `dist/modern/WingetSwiftModern.exe`. UI assets are embedded; no Slint or Visual C++ runtime DLL needs to be installed. Slint attribution is available through the About button; its license and third-party notices accompany the modern archive.
-
-Closing either app during a read-only refresh cancels that WinGet process. Closing during package changes is blocked until completion. Lists refresh after partial batch failures, with per-package results retained in the activity output.
+The previous styled UI remains in `src/compact.cpp`, built with `build-compact.ps1`. The classic and Slint experiments remain buildable with `build-classic.ps1` and `build-modern.ps1`; their historical measurements are in COMPACT.md and BENCHMARKS.md.
 
 ## Verification
 
+On a machine whose code-integrity policy permits the test build:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Diagnostics
-Start-Process .\dist\diagnostics\WingetSwift.exe --self-test -Wait
-Start-Process .\dist\diagnostics\WingetSwift.exe --ui-test -Wait
-Start-Process .\dist\diagnostics\WingetSwift.exe --live-test -Wait
-Start-Process .\dist\diagnostics\WingetSwift.exe --benchmark -Wait
+Start-Process .\dist\native-diagnostics\WingetSwift.exe --self-test -Wait
+Start-Process .\dist\native-diagnostics\WingetSwift.exe --ui-test -Wait
+Start-Process .\dist\native-diagnostics\WingetSwift.exe --live-test -Wait
+powershell -NoProfile -ExecutionPolicy Bypass -File .\measure-native.ps1 -Trials 10
 ```
 
-Results go to `test-results.txt`, `ui-test.txt`, `live-test.txt`, and `startup-ms.txt` in the working directory. Live tests read remote/installed/updatable packages, check an empty search, and create then remove a temporary WinGet export. They do not install, update, import, or remove applications. Exit code 0 means success. Benchmark initializes the window and exits without running WinGet.
+Tests are excluded from the release. Logs: `test-results.txt`, `native-ui-test.txt`, `native-live-test.txt`. Live tests search/list and create then remove a temporary export; they do not install, remove, update or import applications. `measure-native.ps1` measures the release EXE's launch-to-input-idle time and private memory, excludes one warm-up, and writes `native-launch-results.csv`. It has not been run against the final build because Application Control blocked diagnostic execution. No new launch-speed claim is made.
 
-UI tests also render `theme-light.bmp` and `theme-dark.bmp`, verify both palettes and the Windows settings-change notification, and check that repeated theme changes release GDI resources. They do not modify Windows theme settings.
+The parser is validated against English WinGet output. It handles UTF-8, progress/ANSI cleanup, repeated tables and CJK column widths. Localized headers and unusual Unicode widths may need adaptations. Truncated IDs cannot be used for package actions. Read operations time out after two minutes; package operations after one hour. An installer started by WinGet may continue after a timeout; inspect the output before retrying.
 
-The CLI currently emits human-readable tables rather than a structured list format. The parser handles UTF-8, carriage-return progress, ANSI color escapes, CJK column widths, and repeated tables. This release is validated against English WinGet 1.29.380 output; localized headers and unusual Unicode display widths may require adaptations. Truncated package IDs are blocked from package actions. Read operations time out after two minutes; each package operation after one hour. An installer already started by WinGet may continue after a timeout; inspect the output and installer before retrying. There is no cancellation feature in this release.
+## Signing
 
-Background WinGet checks and package operations keep navigation, filtering, and selection available. New checks queue the latest request and cancel obsolete read-only checks; results from another view never replace the current list. Package changes still run one at a time, with conflicting operation buttons disabled until completion.
-
-Update feedback shows elapsed time, animated activity, and the current package's position in a batch. Animation stops on completion. Rounded controls and scrollbar thumbs use Windows GDI+ antialiasing. Win32 cache I/O and manual line parsing reduce embedded runtime code while preserving existing cache files.
-
-## Signing and SmartScreen
-
-A reported `Trojan:Win32/Sabsik.FL.A!ml` alert remains unresolved. The current hardened build and earlier published EXE passed local Defender scans, but the screenshot does not identify the affected file. See [investigation and hashes](DEFENDER-REVIEW.md). The app now resolves only Microsoft-signed WinGet from the registered App Installer package; it ignores executable replacements in PATH and the current directory. Restart Winget Swift if an App Installer update removes the previously verified package directory while the app is open.
-
-The checked-in EXE is unsigned. SmartScreen may warn because an unsigned/new binary has insufficient reputation; a trusted signature helps establish publisher identity, but does not guarantee immediate acceptance. Self-signing does not establish public SmartScreen reputation. See [Microsoft's explanation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
-
-`sign-release.ps1 -Thumbprint CERTIFICATE_THUMBPRINT` signs the release using a code-signing certificate and private key in the current user's Windows certificate store. It checks validity and trust, uses SHA-256 with a timestamp, and verifies the resulting signature. A Windows SDK SignTool installation is required. Recreate the portable ZIP using the signed EXE before publishing. The script has been syntax-checked; actual signing has not been tested because no signing certificate is installed.
+The EXE is unsigned. `sign-release.ps1 -Thumbprint CERTIFICATE_THUMBPRINT` uses a trusted code-signing certificate from the current user's store, SHA-256 and a timestamp, then verifies the signature. No suitable certificate is installed on the build host. Signing establishes publisher identity; it does not prove that the reported malware classification is resolved. Recreate the ZIP after signing. See [Microsoft's reputation guidance](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).

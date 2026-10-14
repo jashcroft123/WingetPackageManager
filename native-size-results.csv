@@ -1,0 +1,5 @@
+Build,Architecture,ExeBytes
+PreviouslyDeliveredStyled,x86,185344
+FirstPlainFrontendStaticCRT,x86,167424
+FirstPlainFrontendHybridCRT,x86,101376
+FinalPlainFrontendHybridCRT,x86,101888
