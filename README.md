@@ -6,7 +6,7 @@ Run `dist/WingetSwift.exe`.
 
 [Download the portable EXE](dist/WingetSwift.exe?raw=true) or [portable ZIP](dist/WingetSwift-portable.zip?raw=true).
 
-The recommended build is the modern **compact native UI**, at **180,224 bytes (180 KB / 176 KiB)**. It recreates the sidebar, rounded controls, spacious rows and collapsible activity panel without Slint. Package-list and activity-log scrollbars use slim rounded thumbs matching the light/dark panel colors, with Windows handling scrolling and high-contrast appearance. Controls adapt to narrow windows and DPI changes to prevent overlapping buttons. See **COMPACT.md** for measurements. The earlier classic build is `dist/WingetSwiftClassic.exe`; the larger Slint trial remains at `dist/modern/WingetSwiftModern.exe`.
+The recommended build is the modern **compact native UI**, at **182,784 bytes (183 KB / 179 KiB)**. It recreates the sidebar, rounded controls, spacious rows and collapsible activity panel without Slint. Package-list and activity-log scrollbars use slim rounded thumbs matching the light/dark panel colors, with Windows handling scrolling and high-contrast appearance. Controls adapt to narrow windows and DPI changes to prevent overlapping buttons. See **COMPACT.md** for measurements. The earlier classic build is `dist/WingetSwiftClassic.exe`; the larger Slint trial remains at `dist/modern/WingetSwiftModern.exe`.
 
 The interface follows Windows' default **app** light/dark mode and updates when Windows theme settings change. Window backgrounds, text fields, package lists, column headers, buttons, and the title bar adapt. Windows high-contrast mode takes priority. Native dialogs and scrollbars retain the appearance supplied by Windows.
 
@@ -31,7 +31,7 @@ Disk caches are reused across launches: installed packages for 10 minutes, updat
 
 By default cache files live under `%LOCALAPPDATA%\WingetSwift\cache`. Run `WingetSwift.exe --portable` to keep them beside the EXE instead (the folder must be writable). Delete the cache folder to reset it.
 
-The recommended release is 176 KiB. Before the repaint fixes, release launch-to-responsive-window medians were 68 ms for x86 and 61 ms for x64 across ten warm runs. The historical matched fixture-render benchmark measured 79 ms for compact, 87 ms for classic, and 157 ms for Slint. These use different readiness endpoints and should not be directly compared. WinGet's network/source startup remains outside the app's control. Details and raw results are in COMPACT.md.
+The recommended release is 179 KiB. Before the repaint fixes, release launch-to-responsive-window medians were 68 ms for x86 and 61 ms for x64 across ten warm runs. The historical matched fixture-render benchmark measured 79 ms for compact, 87 ms for classic, and 157 ms for Slint. These use different readiness endpoints and should not be directly compared. WinGet's network/source startup remains outside the app's control. Details and raw results are in COMPACT.md.
 
 ## Build
 
