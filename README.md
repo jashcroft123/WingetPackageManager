@@ -2,9 +2,9 @@
 
 A native C++ Windows GUI for WinGet. Single portable EXE, no .NET, Electron, WebView, or third-party runtime required. Windows 10/11 with Microsoft App Installer (`winget`) is required. The default is x86 for minimum size; an x64 build is also available.
 
-Run `dist/WingetSwift.exe`.
+**Download links are removed pending malware analysis.** Windows has repeatedly blocked the delivered app; an earlier screenshot identified `Trojan:Win32/Sabsik.FL.A!ml`. Local clean scans have not resolved that report. Keep the flagged file quarantined and do not add an antivirus exclusion. [Investigation, sample hashes and prepared Microsoft report](DEFENDER-REVIEW.md).
 
-[Download the portable EXE](dist/WingetSwift.exe?raw=true) or [portable ZIP](dist/WingetSwift-portable.zip?raw=true).
+Source and build instructions remain available. Previously committed binaries remain in this repository and its history; they are covered by this warning too. Building the source yourself does not establish that the resulting EXE is safe or will be accepted by Defender.
 
 The recommended build is the modern **compact native UI**, at **185,344 bytes (185 KB / 181 KiB)**. It recreates the sidebar, rounded controls, spacious rows and collapsible activity panel without Slint. Package-list and activity-log scrollbars use slim rounded thumbs matching the light/dark panel colors, with Windows handling scrolling and high-contrast appearance. Controls adapt to narrow windows and DPI changes to prevent overlapping buttons. See **COMPACT.md** for measurements. The earlier classic build is `dist/WingetSwiftClassic.exe`; the larger Slint trial remains at `dist/modern/WingetSwiftModern.exe`.
 
