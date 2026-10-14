@@ -3,9 +3,10 @@ The smallest measured GUI and TUI are included at the repository root:
 | App | Language | EXE | Build |
 |---|---|---|---|
 | Native GUI, 101,888 bytes | C++ | `WingetSwift.exe` | `powershell -File build.ps1` |
+| Smallest native GUI, 43,008 bytes | C | `WingetSwiftGuiC.exe` | `powershell -File build-native-c.ps1` |
 | Native TUI, 46,592 bytes | C | `WingetSwiftTuiC.exe` | `powershell -File build-tui-c.ps1` |
 
-Both source implementations and build scripts are on main. See [console controls](TUI-C.md) and [size measurements](TUI-COMPARISON.md). These are unsigned experimental binaries; security status remains unresolved.
+All three source implementations and build scripts are on main. See [C GUI notes](NATIVE-C.md), [console controls](TUI-C.md) and [size measurements](TUI-COMPARISON.md). These are unsigned experimental binaries; security status remains unresolved.
 
 # Winget Swift
 

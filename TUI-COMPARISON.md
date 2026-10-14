@@ -1,4 +1,4 @@
-# TUI size experiment
+# Native size comparison
 
 Measured 2026-10-14, MSVC x86 release builds; raw EXE bytes, without ZIP compression.
 
@@ -7,8 +7,9 @@ Measured 2026-10-14, MSVC x86 release builds; raw EXE bytes, without ZIP compres
 | C++ native GUI | main, 2157c17 | 101,888 | 99.5 |
 | C++ native console | experiment/native-tui | 96,768 | 94.5 |
 | C native console | experiment/c-tui | 46,592 | 45.5 |
+| C native GUI | main | **43,008** | **42.0** |
 
-C is the smallest: 54.3% below the GUI and 51.9% below the C++ console. Changing only the frontend saves little; removing the C++ standard-library backend accounts for most of the reduction. The C rewrite uses Windows heap allocations and console APIs, without a TUI library. All variants require Windows and Microsoft App Installer/WinGet. Windows console hosting and system UCRT are not bundled. ASLR, DEP, stack protection, Microsoft signer verification and an asInvoker manifest remain enabled; no packer is used.
+The C GUI is now smallest: 57.8% below the C++ GUI and 7.7% below the C TUI. The C TUI is 54.3% below the C++ GUI and 51.9% below the C++ console. Changing only the frontend saves little; removing the C++ standard-library backend accounts for most of the reduction. The C versions use Windows heap allocations, native controls or console APIs, without a framework. All variants require Windows and Microsoft App Installer/WinGet. Windows console hosting and system UCRT are not bundled. ASLR, DEP, stack protection, Microsoft signer verification and an asInvoker manifest remain enabled; no packer is used.
 
 ## Validation and limits
 
@@ -33,3 +34,5 @@ Rebuilt 2026-10-14 from the integrated source with the default x86 build scripts
 |---|---:|---|
 | WingetSwift.exe | 101,888 | BEC8F093466299352496B76E04B435A2F14A5D1FB8C96862B4688151727D0EAB |
 | WingetSwiftTuiC.exe | 46,592 | 21297DACF63856980354AA45331CB1E8AA8B980DED7C9ADD63A5B604B98458A0 |
+
+C GUI final build and hash evidence: [NATIVE-C.md](NATIVE-C.md). Its diagnostic build is 53,248 bytes. The top-level C GUI received a non-remediating clean local Defender scan; runtime verification remains pending.
